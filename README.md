@@ -1,4 +1,4 @@
 state-exp
 =========
 
-experimentation is js state machine
+experimentation of a js state machine
