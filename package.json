@@ -1,0 +1,19 @@
+{
+    "name": "core2",
+    "version": "0.0.1",
+    "description": "prototype correspondance.",
+    "engines": {
+        "node": ">=0.6.0"
+    },
+    "dependencies": {
+        "machina": "",
+        "underscore":""
+    },
+    "devDependencies": {
+        "grunt-jasmine-node":"",
+        "jasmine-node": "",
+        "grunt": "~0.4",
+        "grunt-contrib-coffee":"",
+        "grunt-contrib-watch":""
+    }
+}
