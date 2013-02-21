@@ -7,17 +7,24 @@ type12fsmFactory = ->
         initialState: "waiting"
         states :
             waiting :
-                dropCompleted :-> 
-                    @.transition("eligibility")
+                dropCompleted : (accountID)-> 
+                    @.transition("eligibility", accountID)
             
             eligibility : 
-                _onEnter : ->
-                    @.transition("checkTX")
+                _onEnter : (accountID) ->
+                    @.transition("checkTX", accountID)
 
             checkTX : 
-                _onEnter : ->
-                    if (@.AccountClient(12).utility.state == "TX")
+                _onEnter : (accountID) ->
+                    if (@.AccountClient(accountID).utility.state == "TX")
                         @.transition("Cancel", {state:"checkTX", msg:"Texas Customer"} )
+                    else
+                        @.transition("checkECF", accountID)
+
+            checkECF:
+                _onEnter : (accountID) ->
+                    if (@.AccountClient(accountID).pricing.current.ECF == 0)
+                        @.transition("Cancel", {state:"checkECF", msg:"ECF = 0"} )
                     else
                         @.transition("checkECF")
 
