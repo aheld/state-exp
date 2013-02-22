@@ -1,4 +1,25 @@
 NodeState = require 'node-state'
+###
+Verbs
+###
+inTX = (next) ->
+    (data)->
+                if (@AccountClient(data.accountID).utility.state == "TX")
+                    @goto "Cancel", {state:"checkTX", msg:"Texas Customer"}
+                else
+                    @goto next, data
+
+hasECF = (next) ->
+     (data) ->
+                if (@AccountClient(data.accountID).pricing.current.ECF == 0)
+                    @goto "Cancel", {state:"checkECF", msg:"ECF = 0"}
+                else
+                    @goto next
+
+processLetter = ->
+    (data) ->
+        @goto "Success"
+        
 
 class Type12fsm extends NodeState
     states:
@@ -6,30 +27,29 @@ class Type12fsm extends NodeState
             dropCompleted : (data)->
                 @.goto 'CheckTX', data
 
-        Eligibility : 
-            Enter : (data) ->
-                @goto 'CheckTX'
-
         CheckTX : 
-            Enter : (data) ->
-                if (@AccountClient(data.accountID).utility.state == "TX")
-                    @goto "Cancel", {state:"checkTX", msg:"Texas Customer"}
-                else
-                    @goto "CheckECF", data
+            Enter : inTX "CheckECF" 
 
         CheckECF:
-            Enter : (data) ->
-                if (@AccountClient(data.accountID).pricing.current.ECF == 0)
-                    @goto "Cancel", {state:"checkECF", msg:"ECF = 0"}
-                else
-                    @goto "SendLetter"
+            Enter : hasECF "SendLetter"
 
-        SendLetter: {}
+        SendLetter: 
+            Enter: processLetter "Success"
+
+        Success: 
+            Enter : (data)-> 
+                @StatusUpdate(data, "Success")
+                @done
 
         Cancel:
-            Enter: (data) -> {}
+            Enter: (data) -> 
+                @StatusUpdate(data, data['msg'])
+                @done
 
     AccountClient:  ->
+         console.log("OVERRIDE ME")
+
+    StatusUpdate:  ->
          console.log("OVERRIDE ME")
 
 type12fsmFactory = ->

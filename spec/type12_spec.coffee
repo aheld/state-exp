@@ -4,6 +4,10 @@ fsmFactory = fsmLib.type12fsm
 Type12fsm = fsmLib.Type12fsm
 
 createAccountSpy = (fsm, data = {}) ->
+    spyOn(fsm, 'StatusUpdate').andReturn(
+        ok:"saved"
+        )
+
     spyOn(fsm, 'AccountClient').andReturn(
         utility:
             state: data["state"] || "TX"
@@ -11,11 +15,13 @@ createAccountSpy = (fsm, data = {}) ->
             current:
                 ECF: data["ECF"] || 0
         )
+    
 
 describe "Basic state machine", ->
     fsm = {}
     beforeEach ->
         fsm = fsmFactory()
+
 
     it "Should transition", ->
         createAccountSpy(fsm)
@@ -32,7 +38,7 @@ describe "Basic state machine", ->
         createAccountSpy(fsm,{ state:'PA','ECF':100})
         fsm.raise('dropCompleted', {accountID:12})
         expect(fsm.AccountClient).toHaveBeenCalledWith(12)
-        expect(fsm.current_state_name).toEqual('SendLetter')
+        expect(fsm.current_state_name).toEqual('Success')
 
     it "Should cancel for PA customers with 0 ECF", ->
         createAccountSpy(fsm,{ state:'PA','ECF':0})
