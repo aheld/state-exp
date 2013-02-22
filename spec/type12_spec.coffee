@@ -1,4 +1,7 @@
-fsmFactory = require('../src/type12').type12fsm
+fsmLib = require('../src/type12')
+NodeState = require 'node-state'
+fsmFactory = fsmLib.type12fsm
+Type12fsm = fsmLib.Type12fsm
 
 createAccountSpy = (fsm, data = {}) ->
     spyOn(fsm, 'AccountClient').andReturn(
@@ -13,30 +16,26 @@ describe "Basic state machine", ->
     fsm = {}
     beforeEach ->
         fsm = fsmFactory()
+
     it "Should transition", ->
         createAccountSpy(fsm)
-        expect(fsm.state).toEqual("waiting")
-        fsm.handle("dropCompleted", 12)
-        expect(fsm.state).toNotEqual("waiting")
+        fsm.raise('dropCompleted', {accountID:12})
         expect(fsm.AccountClient).toHaveBeenCalledWith(12)
 
-describe "Eligibility", ->
-    fsm = {}
-    beforeEach ->
-        fsm = fsmFactory()
     it "Should cancel for Texas Customers", ->
         createAccountSpy(fsm)
-        fsm.handle("dropCompleted", 12)
-        expect(fsm.state).toEqual("checkTX")        
+        fsm.raise('dropCompleted', {accountID:12, state:'TX'})
         expect(fsm.AccountClient).toHaveBeenCalledWith(12)
-    it "Should pass to checkECF for nonTexas Customers", ->
-        createAccountSpy(fsm,{state:'PA'})
-        fsm.handle("dropCompleted", 12)
-        expect(fsm.state).toEqual("checkECF")        
+        expect(fsm.current_state_name).toEqual('Cancel')
+
+    it "Should send Letter for PA Customers", ->
+        createAccountSpy(fsm,{ state:'PA','ECF':100})
+        fsm.raise('dropCompleted', {accountID:12})
         expect(fsm.AccountClient).toHaveBeenCalledWith(12)
-    it "NonTexas Customers w ECF of 0 get cancelled", ->
-        createAccountSpy(fsm,{state:'PA','ECF':0})
-        fsm.handle("dropCompleted", 12)
-        expect(fsm.state).toEqual("cancel")
+        expect(fsm.current_state_name).toEqual('SendLetter')
+
+    it "Should cancel for PA customers with 0 ECF", ->
+        createAccountSpy(fsm,{ state:'PA','ECF':0})
+        fsm.raise('dropCompleted', {accountID:12})
         expect(fsm.AccountClient).toHaveBeenCalledWith(12)
-        expect(fsm.AccountClient.callCount).toEqual(2)
+        expect(fsm.current_state_name).toEqual('Cancel')

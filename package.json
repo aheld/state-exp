@@ -6,8 +6,8 @@
         "node": ">=0.6.0"
     },
     "dependencies": {
-        "machina": "",
-        "underscore":""
+        "node-state":"",
+        "eventemitter2":""
     },
     "devDependencies": {
         "grunt-jasmine-node":"",

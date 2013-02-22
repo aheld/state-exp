@@ -1,40 +1,43 @@
-_ = require 'underscore'
-machinaFactory = require 'machina'
-machina = machinaFactory _
+NodeState = require 'node-state'
+
+class Type12fsm extends NodeState
+    states:
+        Waiting :
+            dropCompleted : (data)->
+                @.goto 'CheckTX', data
+
+        Eligibility : 
+            Enter : (data) ->
+                @goto 'CheckTX'
+
+        CheckTX : 
+            Enter : (data) ->
+                if (@AccountClient(data.accountID).utility.state == "TX")
+                    @goto "Cancel", {state:"checkTX", msg:"Texas Customer"}
+                else
+                    @goto "CheckECF", data
+
+        CheckECF:
+            Enter : (data) ->
+                if (@AccountClient(data.accountID).pricing.current.ECF == 0)
+                    @goto "Cancel", {state:"checkECF", msg:"ECF = 0"}
+                else
+                    @goto "SendLetter"
+
+        SendLetter: {}
+
+        Cancel:
+            Enter: (data) -> {}
+
+    AccountClient:  ->
+         console.log("OVERRIDE ME")
 
 type12fsmFactory = ->
-    fsm = new machina.Fsm
-        initialState: "waiting"
-        states :
-            waiting :
-                dropCompleted : (accountID)-> 
-                    @.transition("eligibility", accountID)
-            
-            eligibility : 
-                _onEnter : (accountID) ->
-                    @.transition("checkTX", accountID)
-
-            checkTX : 
-                _onEnter : (accountID) ->
-                    if (@.AccountClient(accountID).utility.state == "TX")
-                        @.transition("Cancel", {state:"checkTX", msg:"Texas Customer"} )
-                    else
-                        @.transition("checkECF", accountID)
-
-            checkECF:
-                _onEnter : (accountID) ->
-                    if (@.AccountClient(accountID).pricing.current.ECF == 0)
-                        @.transition("Cancel", {state:"checkECF", msg:"ECF = 0"} )
-                    else
-                        @.transition("checkECF")
-
-            cancel:
-                _onEnter : ->
-                    #
-    fsm.AccountClient = ->
-        console.log("OVERRIDE ME")
-
+    fsm = new Type12fsm
+        autostart: true
+        intial_state: 'Waiting'
+        sync_goto: true
     fsm
 
-
 module.exports.type12fsm = type12fsmFactory
+module.exports.Type12fsm = Type12fsm
