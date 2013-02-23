@@ -1,7 +1,7 @@
 fsmLib = require('../src/type12')
-NodeState = require 'node-state'
 fsmFactory = fsmLib.type12fsm
 Type12fsm = fsmLib.Type12fsm
+
 
 createAccountSpy = (fsm, data = {}) ->
     spyOn(fsm, 'StatusUpdate').andReturn(
@@ -21,7 +21,6 @@ describe "Basic state machine", ->
     fsm = {}
     beforeEach ->
         fsm = fsmFactory()
-
 
     it "Should transition", ->
         createAccountSpy(fsm)

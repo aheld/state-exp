@@ -8,33 +8,20 @@ inTX = (next) ->
                     @goto "Cancel", {state:"checkTX", msg:"Texas Customer"}
                 else
                     @goto next, data
-
-hasECF = (next) ->
-     (data) ->
-                if (@AccountClient(data.accountID).pricing.current.ECF == 0)
-                    @goto "Cancel", {state:"checkECF", msg:"ECF = 0"}
-                else
-                    @goto next
-
-processLetter = ->
-    (data) ->
-        @goto "Success"
         
 
-class Type12fsm extends NodeState
+class MessageProcessor extends NodeState
     states:
         Waiting :
-            dropCompleted : (data)->
-                @.goto 'CheckTX', data
+            messageReceived : (data)->
+                @.goto 'Processing', data
 
-        CheckTX : 
-            Enter : inTX "CheckECF" 
+        Processing : 
+            Enter : (data) ->
+                @.raise "messageReceived",data
 
-        CheckECF:
-            Enter : hasECF "SendLetter"
-
-        SendLetter: 
-            Enter: processLetter "Success"
+            messageReceived : (data)->
+                 @dispatchToFSM(data.message)
 
         Success: 
             Enter : (data)-> 
@@ -52,18 +39,15 @@ class Type12fsm extends NodeState
                 console.log (data || {}).accountID + " leaving " +  @current_state_name + " at " + Date()
                 callback(data)
 
-    AccountClient:  ->
+    dispatchToFSM:  ->
          console.log("OVERRIDE ME")
 
-    StatusUpdate:  ->
-         console.log("OVERRIDE ME")
 
-type12fsmFactory = ->
-    fsm = new Type12fsm
+MessageProcessorFactory = ->
+    messageProcessor = new MessageProcessor
         autostart: true
         intial_state: 'Waiting'
         sync_goto: true
-    fsm
+    messageProcessor
 
-module.exports.type12fsm = type12fsmFactory
-module.exports.Type12fsm = Type12fsm
+module.exports.MessageProcessorFactory = MessageProcessorFactory
